@@ -85,8 +85,8 @@ jobs:
         if: matrix.platform == 'ubuntu-22.04'
         run: |
           export NDK_HOME=$ANDROID_HOME/ndk/27.0.11902837
-          npm run tauri android build -- -- --target armv7
-          npm run tauri android build -- -- --target aarch64
+          npm run tauri android build -- --target armv7
+          npm run tauri android build -- --target aarch64
 
       - name: Push to release
         if: matrix.platform == 'ubuntu-22.04'
