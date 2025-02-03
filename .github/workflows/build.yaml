@@ -71,11 +71,15 @@ jobs:
       
       - name: Install NDK
         if: matrix.platform == 'ubuntu-22.04'
-        run: sdkmanager "ndk;27.0.11902837"
+        run: | 
+          sdkmanager "ndk;27.0.11902837"
+          echo "NDK_HOME=$ANDROID_HOME/ndk/27.0.11902837" >> $GITHUB_ENV
 
       - name: Build for Android
         if: matrix.platform == 'ubuntu-22.04'
-        run: npm run tauri android build
+        run: |
+          export NDK_HOME=$ANDROID_HOME/ndk/27.0.11902837
+          npm run tauri android build
 
       - name: Push to release
         if: matrix.platform == 'ubuntu-22.04'
