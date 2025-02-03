@@ -57,6 +57,12 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+        
+      - name: install Rust stable for Android
+        if: matrix.platform == 'ubuntu-22.04'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
 
       - name: Setup Java
         if: matrix.platform == 'ubuntu-22.04'
