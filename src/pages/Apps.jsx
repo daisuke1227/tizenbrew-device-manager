@@ -54,44 +54,51 @@ export default function Apps() {
 
                             const reader = new FileReader();
                             reader.onload = async () => {
-                                const blob = new Blob([reader.result]);
-                                const read = new BlobReader(blob);
-                                let zip;
+                                setInstalling(true);
                                 try {
-                                    zip = new ZipReader(read);
-                                } catch (e) {
-                                    alert(`There was an error reading the file: ${e}`);
-                                }
-                                const entries = await zip.getEntries();
-                                const app = entries.find(e => e.filename === 'config.xml' || e.filename === 'tizen-manifest.xml');
-                                if (!app) return alert('The file does not contain a valid Tizen app.');
-                                const textWriter = new TextWriter();
-                                const appInfo = await app.getData(textWriter);
-                                const parser = new DOMParser();
-                                const xmlDoc = parser.parseFromString(appInfo, "text/xml");
-                                const manifest = xmlDoc.querySelector('manifest');
-                                let id;
-                                if (!manifest) {
-                                    const widget = xmlDoc.getElementsByTagName('tizen:application')[0];
-                                    id = widget.getAttribute('id');
-                                } else {
-                                    id = manifest.getAttribute('package');
-                                }
+                                    const blob = new Blob([reader.result]);
+                                    const read = new BlobReader(blob);
+                                    let zip;
+                                    try {
+                                        zip = new ZipReader(read);
+                                    } catch (e) {
+                                        alert(`There was an error reading the file: ${e}`);
+                                        return;
+                                    }
+                                    const entries = await zip.getEntries();
+                                    const app = entries.find(e => e.filename === 'config.xml' || e.filename === 'tizen-manifest.xml');
+                                    if (!app) return alert('The file does not contain a valid Tizen app.');
+                                    const textWriter = new TextWriter();
+                                    const appInfo = await app.getData(textWriter);
+                                    const parser = new DOMParser();
+                                    const xmlDoc = parser.parseFromString(appInfo, "text/xml");
+                                    const manifest = xmlDoc.querySelector('manifest');
+                                    let id;
+                                    if (!manifest) {
+                                        const widget = xmlDoc.getElementsByTagName('tizen:application')[0];
+                                        id = widget.getAttribute('id');
+                                    } else {
+                                        id = manifest.getAttribute('package');
+                                    }
 
-                                if (!id) return alert('The app does not have a valid package ID.');
+                                    if (!id) return alert('The app does not have a valid package ID.');
 
-                                const array = new Uint8Array(reader.result);
+                                    const array = new Uint8Array(reader.result);
 
-                                try {
-                                    setInstalling(true);
                                     await state.deviceClient?.push(array, `/home/owner/share/tmp/sdk_tools/${file.name}`);
-                                    //await new Promise(r => setTimeout(r, 5000));
                                     const result = await state.deviceClient?.shell(`0 vd_appinstall ${id} /home/owner/share/tmp/sdk_tools/${file.name}`);
-                                    const lastLines = result.split('\n').slice(-8).join('\n');
-                                    setInstalling(false);
-                                    alert(lastLines);
+                                    const resultString = result ? result.toString() : '';
+                                    const lines = resultString.split('\n').filter(line => line.trim() !== '');
+                                    let finalStatus = lines.filter(line => line.includes('key[end]')).join('\n');
+                                    if (!finalStatus) {
+                                        finalStatus = lines.slice(-3).join('\n');
+                                    }
+                                    alert(finalStatus || 'Installation process finished.');
+
                                 } catch (e) {
                                     alert(`There was an error installing the app: ${e}`);
+                                } finally {
+                                    setInstalling(false);
                                 }
                             }
 
